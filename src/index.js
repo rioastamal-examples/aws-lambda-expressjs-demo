@@ -196,10 +196,10 @@ Contoh perintah:
         }
       });
       
-      const botCommandResponse = `Cuaca untuk kota ${city} saat ini: **${weather.item.weather[0].description}**
-- Suhu: **${weather.item.main.feels_like}°C**
-- Kelembaban: **${weather.item.main.humidity}%**
-- Kecepatan angin: **${weather.item.wind.speed} meter/detik**
+      const botCommandResponse = `Cuaca untuk kota ${city} saat ini: ${weather.item.weather[0].description}
+- Suhu: ${weather.item.main.feels_like} °C
+- Kelembaban: **${weather.item.main.humidity} %
+- Kecepatan angin: **${weather.item.wind.speed} meter/detik
 `
       
       console.log(JSON.stringify(weather, null, 2));
