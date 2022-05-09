@@ -1,0 +1,55 @@
+service: 'astamal-serverless-demo'
+frameworkVersion: '3'
+
+custom:
+  tableName: 'astamal-serverless-demo'
+
+provider:
+  name: aws
+  runtime: nodejs14.x
+  region: ${env:APP_REGION}
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - dynamodb:Query
+            - dynamodb:Scan
+            - dynamodb:GetItem
+            - dynamodb:PutItem
+            - dynamodb:UpdateItem
+            - dynamodb:DeleteItem
+          Resource: 'arn:aws:dynamodb:${self:provider.region}:${aws:accountId}:table/${self:custom.tableName}'
+
+functions:
+  botdemo:
+    handler: src/index.handler
+    url:
+      cors: true
+    environment:
+      APP_TABLE_NAME: '${self:custom.tableName}'
+      APP_BOT_TOKEN: '${env:APP_BOT_TOKEN}'
+      APP_OPENWEATHER_APIKEY: '${env:APP_OPENWEATHER_APIKEY}'
+      APP_OPENWEATHER_CACHE_TTL: '${env:APP_OPENWEATHER_CACHE_TTL}'
+      APP_REGION: '${env:APP_REGION}'
+          
+resources:
+  Resources:
+    BotDemoTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        AttributeDefinitions:
+          - AttributeName: pk
+            AttributeType: S
+          - AttributeName: sk
+            AttributeType: S
+        KeySchema:
+          - AttributeName: pk
+            KeyType: HASH
+          - AttributeName: sk
+            KeyType: RANGE
+        BillingMode: PAY_PER_REQUEST
+        TableName: ${self:custom.tableName}
+        TimeToLiveSpecification:
+          AttributeName: ttl
+          Enabled: true
