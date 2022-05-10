@@ -78,6 +78,31 @@ function getWeather(options) {
   });
 }
 
+function getAirPollution(options) {
+  return new Promise((resolve, reject) => {
+    const queryString = [
+      `lat=${options.lat}`,
+      `lon=${options.lon}`,
+      `appId=${openWeatherApiKey}`
+    ];
+    
+    const url = `${openWeatherApiUrl}/data/2.5/air_pollution?` + queryString.join('&');
+    https.get(url, (resp) => {
+      if (resp.statusCode !== 200) {
+        resp.resume();
+        reject(new Error(`HTTP Status code from OpenWeatherData was ${resp.statusCode}`));
+        return;
+      }
+      
+      let responseData = '';
+      resp.on('data', (chunk) => responseData += chunk);
+      resp.on('end', () => {
+        resolve(responseData);
+      });
+    });
+  });
+}
+
 async function getItemFromCache(options) {
   const itemParam = {
     TableName: tableName,
@@ -207,16 +232,26 @@ Contoh perintah:
     }
     
     if (command === '/polusi') {
-      // Quiz - Buat PR untuk fitur ini
-      // ------------------------------
-      // Lengkapi perintah ini sehingga mengembalikan data polusi udara
-      // untuk sebuah kota dari API OpenWeatherMap.org
-      //
-      // Contoh perintah:
-      // /polusi jakarta
-      //
-      // Respon yang harus dikembalikan adalah
-      // Polusi udara kota jakarta saat ini: *Sangat Buruk|Buruk|Sedang|Cukup Baik|Baik*
+      const { lat, lon } = responseCity.item[0];
+      const airPollution = await getItemFromCache({
+        pk: `cache#${lat},${lon}`,
+        sk: 'airpollution-cache',
+        getFreshItem: async (options) => { 
+          return getAirPollution({ lat: lat, lon: lon });
+        }
+      });
+
+      const gradeMap = {
+        1: 'Baik',
+        2: 'Cukup Baik',
+        3: 'Sedang',
+        4: 'Buruk',
+        5: 'Sangat Buruk'
+      };
+      const botCommandResponse = `Polusi udara kota ${city} saat ini: ${gradeMap[airPollution.item.list[0].main.aqi]}`;
+      
+      console.log(JSON.stringify(airPollution, null, 2));
+      botResponse.text = botCommandResponse;
     }
     
     res.json(botResponse);
